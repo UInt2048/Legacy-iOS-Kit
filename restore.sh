@@ -32,17 +32,16 @@ pause() {
 }
 
 clean() {
-    rm -rf "$(dirname "$0")/tmp/"* "$(dirname "$0")/iP"*/ "$(dirname "$0")/tmp/"
-    if [[ $device_sudoloop == 1 ]]; then
-        sudo rm -rf /tmp/futurerestore /tmp/*.json "$(dirname "$0")/tmp/"* "$(dirname "$0")/iP"*/ "$(dirname "$0")/tmp/"
-        if [[ -z $device_disable_usbmuxd ]]; then
-            sudo systemctl restart usbmuxd
-        fi
-    fi
+    kill $httpserver_pid $iproxy_pid 2>/dev/null
+    popd &>/dev/null
+    rm -rf "$(dirname "$0")/tmp/"* "$(dirname "$0")/iP"*/ "$(dirname "$0")/tmp/" 2>/dev/null
 }
 
 clean_and_exit() {
-    kill $httpserver_pid $iproxy_pid $sudoloop_pid $usbmuxd_pid 2>/dev/null
+    if [[ $platform == "windows" ]]; then
+        input "Press Enter/Return to exit."
+        read -s
+    fi
     clean
 }
 
@@ -254,9 +253,6 @@ set_tool_paths() {
 
         ping="ping -n 1"
 
-        if [[ ! -d $dir || ! -d ../.git ]]; then
-            error "Using Legacy iOS Kit on Windows is not supported. Use on Linux or macOS instead." "You can continue by git cloning this repo, but I do not recommend using this on Windows in any case."
-        fi
         warn "Using Legacy iOS Kit on Windows is not recommended."
         print "* Many features of Legacy iOS Kit will not work on Windows."
         print "* Please switch to a Linux or Mac machine to avoid issues."
@@ -396,51 +392,6 @@ install_depends() {
     exit
 }
 
-version_get() {
-    log "Checking for updates..."
-    github_api=$(curl https://api.github.com/repos/LukeZGD/Legacy-iOS-Kit/releases/latest 2>/dev/null)
-    pushd "$(dirname "$0")/tmp" >/dev/null
-    version_latest=$(echo "$github_api" | $jq -r '.assets[] | select(.name|test("complete")) | .name' | cut -c 25- | cut -c -9)
-    git_hash_latest=$(echo "$github_api" | $jq -r '.assets[] | select(.name|test("git-hash")) | .name' | cut -c 21- | cut -c -7)
-    popd >/dev/null
-}
-
-version_update() {
-    local url
-    local req
-    read -p "$(input 'Do you want to update now? (Y/n): ')" opt
-    if [[ $opt == 'n' || $opt == 'N' ]]; then
-        exit
-    fi
-    if [[ -d .git ]]; then
-        log "Running git pull..."
-        git pull
-        log "Done! Please run the script again"
-        exit
-    elif (( $(ls bin | wc -l) > 1 )); then
-        req=".assets[] | select (.name|test(\"complete\")) | .browser_download_url"
-    elif [[ $platform == "linux" ]]; then
-        req=".assets[] | select (.name|test(\"${platform}_$platform_arch\")) | .browser_download_url"
-    else
-        req=".assets[] | select (.name|test(\"${platform}\")) | .browser_download_url"
-    fi
-    pushd "$(dirname "$0")/tmp" >/dev/null
-    url="$(echo "$github_api" | $jq -r "$req")"
-    log "Downloading: $url"
-    curl -L $url -o latest.zip
-    if [[ ! -s latest.zip ]]; then
-        error "Download failed. Please run the script again"
-    fi
-    popd >/dev/null
-    log "Updating..."
-    cp resources/firstrun tmp 2>/dev/null
-    rm -r bin/ resources/ LICENSE README.md restore.sh
-    unzip -q tmp/latest.zip -d .
-    cp tmp/firstrun resources 2>/dev/null
-    log "Done! Please run the script again"
-    exit
-}
-
 version_check() {
     pushd .. >/dev/null
     if [[ -d .git ]]; then
@@ -459,34 +410,12 @@ version_check() {
         version_current="$(cat ./resources/version)"
         git_hash="$(cat ./resources/git_hash)"
     else
-        log ".git directory and git_hash file not found, cannot determine version."
-        if [[ $no_version_check != 1 ]]; then
-            warn "Your copy of Legacy iOS Kit is downloaded incorrectly. Do not use the \"Code\" button in GitHub."
-            print "Please download Legacy iOS Kit using git clone or from GitHub releases: https://github.com/LukeZGD/Legacy-iOS-Kit/releases"
-            version_get
-            version_update
-        fi
+        version_current="v23.08.02"
+        git_hash="final"
     fi
 
     if [[ -n $version_current ]]; then
         print "* Version: $version_current ($git_hash)"
-    fi
-
-    if [[ $no_version_check != 1 ]]; then
-        version_get
-        if [[ -z $version_latest ]]; then
-            warn "Failed to check for updates. GitHub may be down or blocked by your network."
-        elif [[ $git_hash_latest != "$git_hash" ]]; then
-            if (( $(echo $version_current | cut -c 2- | sed -e 's/\.//g') >= $(echo $version_latest | cut -c 2- | sed -e 's/\.//g') )); then
-                warn "Current version is newer/different than remote: $version_latest ($git_hash_latest)"
-            else
-                print "* A newer version of Legacy iOS Kit is available."
-                print "* Current version: $version_current ($git_hash)"
-                print "* Latest version:  $version_latest ($git_hash_latest)"
-                print "* Please download/pull the latest version before proceeding."
-                version_update
-            fi
-        fi
     fi
     popd >/dev/null
 }
@@ -3109,9 +3038,6 @@ menu_print_info() {
     fi
     if [[ $no_version_check == 1 ]]; then
         warn "No version check flag detected, update check is disabled and no support will be provided."
-    fi
-    if [[ $git_hash_latest != "$git_hash" ]]; then
-        warn "Current version is newer/different than remote: $version_latest ($git_hash_latest)"
     fi
     print "* Platform: $platform ($platform_ver) $live_cdusb_str"
     if [[ $platform == "windows" ]]; then
