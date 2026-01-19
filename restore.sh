@@ -246,7 +246,7 @@ set_tool_paths() {
         sha1sum="$(which shasum) -a 1"
         sha256sum="$(which shasum) -a 256"
 
-    elif [[ $OSTYPE == "msys" ]]; then
+    elif [[ $OSTYPE == "msys" || $OSTYPE == "cygwin" ]]; then
         platform="windows"
         platform_ver="$(uname)"
         dir="../bin/windows"
@@ -257,8 +257,7 @@ set_tool_paths() {
         print "* Many features of Legacy iOS Kit will not work on Windows."
         print "* Please switch to a Linux or Mac machine to avoid issues."
         print "* Read the How to Use page: https://github.com/LukeZGD/Legacy-iOS-Kit/wiki/How-to-Use"
-        sleep 5
-        pause
+        
         # itunes version check
         itunes_ver="Unknown"
         if [[ -e "/c/Program Files/iTunes/iTunes.exe" ]]; then
@@ -269,7 +268,7 @@ set_tool_paths() {
         log "iTunes version: $itunes_ver"
         if [[ $(echo "$itunes_ver" | cut -c -2) == 12 ]]; then
             local itunes_ver2=$(echo "$itunes_ver" | cut -c 4-)
-            itunes_ver2=${itunes_ver%%.*}
+            itunes_ver2=${itunes_ver2%%.*}
             if (( itunes_ver2 > 6 )); then
                 warn "Detected a newer iTunes version."
                 print "* Please downgrade iTunes to 12.6.5, 12.4.3, or older."
@@ -3799,7 +3798,8 @@ main() {
     if [[ $? != 0 ]]; then
         $ping 208.67.222.222 >/dev/null
         if [[ $? != 0 ]]; then
-            error "Please check your Internet connection before proceeding."
+            warn "Ping failed! Please check your Internet connection before proceeding."
+			pause
         fi
     fi
 

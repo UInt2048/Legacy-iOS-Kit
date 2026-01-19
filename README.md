@@ -1,5 +1,48 @@
 # Legacy iOS Kit
 
+## Windows
+
+This branch supports Windows 8.1 and newer. You may confirm the commit [`53ff0e9`](https://github.com/UInt2048/Legacy-iOS-Kit/commit/53ff0e9c164974aecb8196c9cd4f3e77e604e859) is identical to v23.08.02 archived [here](https://web.archive.org/web/20240411225954/https://github.com/LukeZGD/Legacy-iOS-Kit/files/14790995/Legacy-iOS-Kit_windows_v23.08.02.zip). However, [a dependency change in early 2025](https://www.msys2.org/news/#2025-02-14-moving-msys2-closer-to-cygwin) caused MSYS to report as Cygwin, which that version was not equipped to deal with.
+
+**Warning:** Some features do not function on Windows. Issues on Windows filed upstream will not be accepted.
+
+### Installing on Windows
+
+1. Install MSYS from the appropriate installer:
+    - For Windows 8.1, the latest version is [at the official GitHub (direct download)](https://github.com/msys2/msys2-installer/releases/download/2024-01-13/msys2-x86_64-20240113.exe).
+    - For Windows 10 and newer, the latest version is [at the homepage](https://www.msys2.org/).
+    - To obtain an older release, see all releases [at the official GitHub](https://github.com/msys2/msys2-installer/releases).
+    - **Note:** The default installation path is `C:\msys64`. If you install MSYS anywhere else, `restore.cmd` must be edited with the correct location.
+2. Download this software as follows:
+    1. Open the terminal program called "MSYS2 MSYS".
+    2. Type `pacman -S git` in the window. When prompted, `y` to confirm. (Note to inexperienced terminal users: You need to hit the enter key after typing a command.)
+    3. You may receive errors in the installation. To confirm it worked, type `which git`. You should receive `/usr/bin/git` back in response.
+    4. Download this software: `git clone -b windows https://github.com/UInt2048/Legacy-iOS-Kit.git`
+3. Download iTunes 12.6.5.3 [directly from Apple](https://secure-appldnld.apple.com/itunes12/091-87819-20180912-69177170-B085-11E8-B6AB-C1D03409AD2A6/iTunes64Setup.exe) or [the Internet Archive](https://web.archive.org/web/20220706085208/https://support.apple.com/en-us/HT208079). Alternatively, you may download iTunes 12.4.3 [directly from Apple](https://secure-appldnld.apple.com/itunes12/031-69284-20160802-7E7B2D20-552B-11E6-B2B9-696CECD541CE/iTunes64Setup.exe), or any other older version. Do not use the Microsoft store version of iTunes, or any newer version of iTunes, and ensure it is installed in the default location.
+4. Continue to the next section to run the program.
+
+### Running on Windows
+
+* Run `restore.cmd` from the File Explorer, or type `./restore.sh` in the MSYS terminal program.
+    - In the MSYS terminal, before running the above command, you need to open the Legacy iOS Kit folder by typing `cd ~/Legacy-iOS-Kit`.
+    - The Legacy iOS Kit folder will be relative to the MSYS installation path. For example, on my computer, this was `C:\msys64\home\Matthew Benedict\Legacy-iOS-Kit`.
+
+### Troubleshooting
+
+* Legacy iOS Kit requires some dependencies to be installed. This should occur automatically, but you may do this manually with the command `pacman -Syu --needed ca-certificates curl libcurl libopenssl openssh openssl unzip zip`
+* From time to time, there may be newer versions of software in the MSYS installation. Run `pacman -Syu` to check for updates and install them.
+* Sometimes antivirus software is overeager to detect jailbreak exploits, which could be potentially used by malicious software if you did not expect them. If this occurs, you may exclude this software from your antivirus.
+    - For example, if you are using Windows Defender on Windows 10:
+        - Go to Start > Settings > Update & Security > Windows Security > Virus & threat protection.
+        - Under Virus & threat protection settings, select Manage settings, and then under Exclusions, select Add or remove exclusions.
+        - Select Add an exclusion, and then select folder, and browse to the `Legacy-iOS-Kit` folder.
+* You can determine if necessary files have been removed (such as by an antivirus program) by typing `git status`. You should see "nothing to commit, working tree clean" in the output of this command.
+    - If there are files deleted, run `git reset --hard HEAD` and then check again. If there are still issues, ensure that you have properly excluded this folder from your antivirus.
+
+---
+
+The original README contents of this branch are below:
+
 - (formerly iOS-OTA-Downgrader)
 - **A multi-purpose script to downgrade/restore, save SHSH blobs, and jailbreak legacy iOS devices**
 - Supported on **Linux and macOS**
